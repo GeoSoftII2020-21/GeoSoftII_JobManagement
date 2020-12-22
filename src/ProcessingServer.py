@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 access = {
     "ndvi":445,
-    "sst":444,
+    "mean_sst":444,
     "load_collection":443
 }
 
