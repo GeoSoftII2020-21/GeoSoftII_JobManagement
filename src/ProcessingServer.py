@@ -14,7 +14,7 @@ access = {
 }
 
 jobQueue = queue.Queue()
-doneJobs = queue.Queue()
+
 
 @app.route("/takeJob", methods=["POST"])
 def takeJob():
@@ -32,17 +32,20 @@ def doJob():
         print(elem)
         data = {}
         for i in elem["process"]["process_graph"]:
-            if elem["process"]["process_graph"][i]["process_id"] == "load_collection":
-                data[i] = requests.get("http://localhost:" + str(access["load_collection"]) + "/data",
-                                       json=elem["process"]["process_graph"][i])
-            if jobQueue[0]["process"]["process_graph"][i]["process_id"] == "sst":
-                data[i] = requests.get("http://localhost:" + str(access["sst"]) + "/doJob", json={})
-
-        doneJobs.put(elem)#Ersetzen durch ergebnis
+            doing = True
+            requests.post("http://localhost:" + access[elem["process"]["process_graph"][i]["process_id"]] + "/doJob",
+                                   json=elem["process"]["process_graph"][i])#Todo: Bearbeiten auf grudnlage der Prozess beschreibung
+            while doing:
+                x = requests.get("http://localhost:" + access[elem["process"]["process_graph"][i]["process_id"]] + "/jobStatus")
+                if x["status"] == "done":
+                    doing = False
+                    data[i] = x
+                time.sleep(5)
+        requests.post("http://localhost:80/takeData" + elem["id"], json=None)
     else:
         print("skip Iteration")
         time.sleep(5)
-        doJob()
+    doJob()
     #Send Main Server Data
 
 
@@ -51,11 +54,6 @@ def doJob():
 
 
 def init():
-    data = {
-        "id":0,
-        "port": 442,
-        "status": "idle"
-    }
     t = threading.Thread(target=doJob)
     t.start()
 
