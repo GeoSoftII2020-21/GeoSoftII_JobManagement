@@ -8,10 +8,10 @@ COPY req.txt .
 RUN pip install -r req.txt
 
 #Port Oeffnen Empfehlung, beim starten noch mit -80:80 ausführen
-EXPOSE 442
+EXPOSE 80
 
 #Kopiere Code
 COPY src/ .
 
 #Ausführen beim Starten
-CMD ["python3", "./Server.py"]
+CMD ["python3", "./ProcessingServer.py"]
