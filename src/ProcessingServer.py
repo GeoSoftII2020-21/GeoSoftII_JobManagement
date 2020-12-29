@@ -17,6 +17,11 @@ access = {
     "load_collection": None
 }
 
+ports = {
+    "ndvi": 441,
+    "mean_sst": 442,
+    "load_collection": 443
+}
 jobQueue = queue.Queue()
 
 
@@ -26,7 +31,7 @@ def takeJob():
     jobQueue.put(js)
 
     #DoStuff
-    return jsonify(None)
+    return Response(status=200)
 
 
 def doJob():
@@ -43,25 +48,26 @@ def doJob():
                 doing = True
                 if docker:
                     requests.post("http://" + access[elem["process"]["process_graph"][i]["process_id"]] + ":80/doJob",
-                                  json=elem["process"]["process_graph"][
-                                      i])  # Todo: Bearbeiten auf grudnlage der Prozess beschreibung
+                                  json=elem["process"]["process_graph"][i])  # Todo: Bearbeiten auf grudnlage der Prozess beschreibung
                 else:
-                    requests.post("http://" + access[elem["process"]["process_graph"][i]["process_id"]] + ":80/doJob",
-                                  json=elem["process"]["process_graph"][
-                                      i])  # Todo: Bearbeiten auf grudnlage der Prozess beschreibung
+                    requests.post("http://localhost:" + ports[elem["process"]["process_graph"][i]["process_id"]] + "/doJob",
+                                  json=elem["process"]["process_graph"][i])  # Todo: Bearbeiten auf grudnlage der Prozess beschreibung
                     # Todo: Ersetzen durch nicht Dockerisierte Request
                 while doing:
                     if docker:
                         x = requests.get(
                             "http://" + access[elem["process"]["process_graph"][i]["process_id"]] + ":80/jobStatus")
                     else:
-                        x = requests.get("http://" + access[elem["process"]["process_graph"][i][
-                            "process_id"]] + ":80/jobStatus")  # Todo: Ersetzen durch direkte Request ohne Docker
+                        x = requests.get("http://localhost:" + ports[elem["process"]["process_graph"][i]["process_id"]] + "/jobStatus")  # Todo: Ersetzen durch direkte Request ohne Docker
+                    x = x.json()
                     if x["status"] == "done":
                         doing = False
-                        data[i] = x
+                        data[i] = x  #Todo: Ersetzen durch  Job Ergebnis
                     time.sleep(5)
-            requests.post("http://frontend:80/takeData" + elem["id"], json=None)
+            if docker:
+                requests.post("http://frontend:80/takeData" + elem["id"], json=None)
+            else:
+                requests.post("http://localhost:80/takeData" + elem["id"], json=None)
         else:
             print("skip Iteration")
             time.sleep(5)
