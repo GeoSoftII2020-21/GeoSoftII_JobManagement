@@ -28,6 +28,10 @@ jobQueue = queue.Queue()
 
 @app.route("/takeJob", methods=["POST"])
 def takeJob():
+    """
+    Nimmt job vom Frontend entgegen und queued ihn für die weitere bearbeitung. Antwortet mit status code 200.
+    :return:
+    """
     js = request.get_json()
     jobQueue.put(js)
 
@@ -36,6 +40,10 @@ def takeJob():
 
 
 def doJob():
+    """
+    Führt den Job in einem Extra Thread aus. Dazu wird erst der Status überprüft und danach wird jeder job teil an die dafür spezialisierten server weiter geleitet.
+    Das ergebnis wird am ende zurück ans Frontend gepostet.
+    """
     while True:
         if jobQueue.qsize() > 0:
             elem = jobQueue.get()
@@ -86,6 +94,9 @@ def doJob():
 
 
 def init():
+    """
+    Initialisiert etwas logik in dem es den Thread startet und notwendige umgebungs variablen ausliest
+    """
     t = threading.Thread(target=doJob)
     t.start()
     access["ndvi"] = os.environ.get("ndvi")
