@@ -51,42 +51,42 @@ def doJob():
                 req = requests.get("http://frontend:80/jobRunning/" + elem["id"])
             else:
                 req = requests.get("http://localhost:80/jobRunning/" + elem["id"])
+            req = req.json()
             if req["status"] == "running":
                 data = {}
                 for i in elem["process"]["process_graph"]:
-                    if elem["process"]["process_graph"][i]["id"] == "save_result":
+                    if elem["process"]["process_graph"][i]["process_id"] == "save_result":
                         if elem["process"]["process_graph"][i]["arguments"]["Format"] == "netcdf":
-                            #Todo: Fragen wie man netcdf erstellt
-                            print("x")
+                            print("x")#Todo: Save Data "Implementeiren"
                     else:
                         doing = True
-                        js = json.loads(elem["process"]["process_graph"][i])
                         if "data" in elem["process"]["process_graph"][i]["arguments"]:
                             if "from_node"  in elem["process"]["process_graph"][i]["arguments"]["data"]:
                                 if elem["process"]["process_graph"][i]["arguments"]["data"]["from_node"] in data:
-                                    elem["process"]["process_graph"][i]["arguments"]["data"]["from_node"] = data[i]
+                                    elem["process"]["process_graph"][i]["arguments"]["data"]["from_node"] = str(data[elem["process"]["process_graph"][i]["arguments"]["data"]["from_node"]])
                         if docker:
                             requests.post("http://" + access[elem["process"]["process_graph"][i]["process_id"]] + ":80/doJob",
                                           json=elem["process"]["process_graph"][i])
                         else:
-                            requests.post("http://localhost:" + ports[elem["process"]["process_graph"][i]["process_id"]] + "/doJob",
+                            requests.post("http://localhost:" + str(ports[elem["process"]["process_graph"][i]["process_id"]]) + "/doJob",
                                           json=elem["process"]["process_graph"][i])
                         while doing:
                             if docker:
                                 x = requests.get(
                                     "http://" + access[elem["process"]["process_graph"][i]["process_id"]] + ":80/jobStatus")
                             else:
-                                x = requests.get("http://localhost:" + ports[elem["process"]["process_graph"][i]["process_id"]] + "/jobStatus")
+                                x = requests.get("http://localhost:" + str(ports[elem["process"]["process_graph"][i]["process_id"]]) + "/jobStatus")
+                            print(x.json())
                             x = x.json()
                             if x["status"] == "done":
                                 doing = False
-                                data[i] = x["result"]  #Todo: Ersetzen durch  Job Ergebnis
+                                data[i] = x["id"]  #Todo: Ersetzen durch  Job Ergebnis
                             else:
                                 time.sleep(5)
-                    if docker:
-                        requests.post("http://frontend:80/takeData" + elem["id"], json=data)
-                    else:
-                        requests.post("http://localhost:80/takeData" + elem["id"], json=data)
+                if docker:
+                    requests.post("http://frontend:80/takeData/" + str(elem["id"]), json=data)
+                else:
+                    requests.post("http://localhost:80/takeData/" + str(elem["id"]), json=data)
         else:
             print("skip Iteration")
             time.sleep(5)
