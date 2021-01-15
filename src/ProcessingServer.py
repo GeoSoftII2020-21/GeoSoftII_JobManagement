@@ -6,6 +6,7 @@ import time
 import queue
 import os
 import json
+import xarray
 docker = False
 
 app = Flask(__name__)
@@ -53,11 +54,15 @@ def doJob():
                 req = requests.get("http://localhost:80/jobRunning/" + elem["id"])
             req = req.json()
             if req["status"] == "running":
+                os.mkdir("data/"+ elem["id"])
                 data = {}
                 for i in elem["process"]["process_graph"]:
                     if elem["process"]["process_graph"][i]["process_id"] == "save_result":
                         if elem["process"]["process_graph"][i]["arguments"]["Format"] == "netcdf":
-                            print("x")#Todo: Save Data "Implementeiren"
+                            os.mkdir("data/" + str(elem["id"])+ "/saves")
+                            x = data[elem["process"]["process_graph"][i]["arguments"]["SaveData"]["from_node"]]
+                            x = xarray.load_dataset("data/"+str(elem["id"])+"/"+str(x)+".nc")
+                            x.to_netcdf("data/" + str(elem["id"])+ "/saves"+ "/" + str(uuid.uuid1())+ ".nc")
                     else:
                         doing = True
                         if "data" in elem["process"]["process_graph"][i]["arguments"]:
@@ -65,10 +70,10 @@ def doJob():
                                 if elem["process"]["process_graph"][i]["arguments"]["data"]["from_node"] in data:
                                     elem["process"]["process_graph"][i]["arguments"]["data"]["from_node"] = str(data[elem["process"]["process_graph"][i]["arguments"]["data"]["from_node"]])
                         if docker:
-                            requests.post("http://" + access[elem["process"]["process_graph"][i]["process_id"]] + ":80/doJob",
+                            requests.post("http://" + access[elem["process"]["process_graph"][i]["process_id"]] + ":80/doJob/"+ str(elem["id"]),
                                           json=elem["process"]["process_graph"][i])
                         else:
-                            requests.post("http://localhost:" + str(ports[elem["process"]["process_graph"][i]["process_id"]]) + "/doJob",
+                            requests.post("http://localhost:" + str(ports[elem["process"]["process_graph"][i]["process_id"]]) + "/doJob/"+str(elem["id"]),
                                           json=elem["process"]["process_graph"][i])
                         while doing:
                             if docker:
@@ -76,7 +81,6 @@ def doJob():
                                     "http://" + access[elem["process"]["process_graph"][i]["process_id"]] + ":80/jobStatus")
                             else:
                                 x = requests.get("http://localhost:" + str(ports[elem["process"]["process_graph"][i]["process_id"]]) + "/jobStatus")
-                            print(x.json())
                             x = x.json()
                             if x["status"] == "done":
                                 doing = False
@@ -84,9 +88,9 @@ def doJob():
                             else:
                                 time.sleep(5)
                 if docker:
-                    requests.post("http://frontend:80/takeData/" + str(elem["id"]), json=data)
+                    requests.post("http://frontend/takeData/" + str(elem["id"]))
                 else:
-                    requests.post("http://localhost:80/takeData/" + str(elem["id"]), json=data)
+                    requests.post("http://localhost:80/takeData/" + str(elem["id"]))
         else:
             print("skip Iteration")
             time.sleep(5)
