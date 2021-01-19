@@ -82,9 +82,12 @@ def doJob():
                             else:
                                 x = requests.get("http://localhost:" + str(ports[elem["process"]["process_graph"][i]["process_id"]]) + "/jobStatus")
                             x = x.json()
-                            if x["status"] == "done":
+                            if x["status"] == "done" and x["jobid"] == elem["id"]:
                                 doing = False
                                 data[i] = x["id"]  #Todo: Ersetzen durch  Job Ergebnis
+                            elif x["status"] == "failed":
+                                print("Job Gescheitert!")
+                                #Todo: Logik Implementieren
                             else:
                                 time.sleep(5)
                 if docker:
