@@ -46,8 +46,10 @@ def doJob():
     Das ergebnis wird am ende zurück ans Frontend gepostet.
     """
     while True:
+        status = "idle"
         if jobQueue.qsize() > 0:
             elem = jobQueue.get()
+            status = "running"
             if docker:
                 req = requests.get("http://frontend:80/jobRunning/" + elem["id"])
             else:
@@ -85,13 +87,19 @@ def doJob():
                             if x["status"] == "done" and x["jobid"] == elem["id"]:
                                 doing = False
                                 data[i] = x["id"]  #Todo: Ersetzen durch  Job Ergebnis
-                            elif x["status"] == "failed":
-                                print("Job Gescheitert!")
+                            elif x["status"] == "failed" and x["jobid"]:
+                                status = "failed"
+                                if docker:
+                                    requests.post("http://frontend/takeData/" + str(elem["id"]),
+                                                  params={"status": status})
+                                else:
+                                    requests.post("http://localhost:80/takeData/" + str(elem["id"]),params={"status": status})
+                                continue
                                 #Todo: Logik Implementieren
                             else:
                                 time.sleep(5)
                 if docker:
-                    requests.post("http://frontend/takeData/" + str(elem["id"]))
+                    requests.post("http://frontend/takeData/" + str(elem["id"]),  params={"status":status})
                 else:
                     requests.post("http://localhost:80/takeData/" + str(elem["id"]))
         else:
