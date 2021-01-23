@@ -51,14 +51,16 @@ def doJob():
             elem = jobQueue.get()
             status = "running"
             if docker:
-                req = requests.get("http://frontend:80/jobRunning/" + elem["id"])
+                req = requests.get("http://frontend:8080/jobRunning/" + elem["id"])
             else:
-                req = requests.get("http://localhost:80/jobRunning/" + elem["id"])
+                req = requests.get("http://localhost:8080/jobRunning/" + elem["id"])
             req = req.json()
             if req["status"] == "running":
                 os.mkdir("data/"+ elem["id"])
                 data = {}
                 for i in elem["process"]["process_graph"]:
+                    if status == "error":
+                        continue
                     if elem["process"]["process_graph"][i]["process_id"] == "save_result":
                         if elem["process"]["process_graph"][i]["arguments"]["Format"] == "netcdf":
                             os.mkdir("data/" + str(elem["id"])+ "/saves")
@@ -86,22 +88,23 @@ def doJob():
                             x = x.json()
                             if x["status"] == "done" and x["jobid"] == elem["id"]:
                                 doing = False
-                                data[i] = x["id"]  #Todo: Ersetzen durch  Job Ergebnis
-                            elif x["status"] == "failed" and x["jobid"]:
-                                status = "failed"
+                                data[i] = x["id"]
+                            elif x["status"] == "error" and x["jobid"]:
+                                status = "error"
+                                doing = False
                                 if docker:
-                                    requests.post("http://frontend/takeData/" + str(elem["id"]),
-                                                  params={"status": status})
+                                    requests.post("http://frontend:8080/takeData/" + str(elem["id"]),
+                                                  params={"status": status,  "errorType": x["errorType"]})
                                 else:
-                                    requests.post("http://localhost:80/takeData/" + str(elem["id"]),params={"status": status})
-                                continue
+                                    requests.post("http://localhost:8080/takeData/" + str(elem["id"]),params={"status": status})
+                                break #Evtl doch Continue?
                                 #Todo: Logik Implementieren
                             else:
                                 time.sleep(5)
-                if docker:
-                    requests.post("http://frontend/takeData/" + str(elem["id"]),  params={"status":status})
-                else:
-                    requests.post("http://localhost:80/takeData/" + str(elem["id"]))
+                    if status == "error":
+                        break
+                if status != "error":
+                    requests.post("http://frontend:8080/takeData/" + str(elem["id"]),  params={"status": "done"})
         else:
             print("skip Iteration")
             time.sleep(5)
