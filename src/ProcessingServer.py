@@ -9,9 +9,11 @@ import json
 import xarray
 docker = False
 
+
 app = Flask(__name__)
 
 
+dataserver_ready = False
 
 access = {
     "ndvi":None,
@@ -25,6 +27,11 @@ ports = {
     "load_collection": 443
 }
 jobQueue = queue.Queue()
+
+@app.route("/dataStatus",methods=["GET"])
+def dataStatus():
+    global dataserver_ready
+    dataserver_ready = True
 
 
 @app.route("/takeJob", methods=["POST"])
@@ -45,7 +52,10 @@ def doJob():
     Führt den Job in einem Extra Thread aus. Dazu wird erst der Status überprüft und danach wird jeder job teil an die dafür spezialisierten server weiter geleitet.
     Das ergebnis wird am ende zurück ans Frontend gepostet.
     """
+    global dataserver_ready
     while True:
+        while not dataserver_ready:
+            time.sleep(5)
         status = "idle"
         if jobQueue.qsize() > 0:
             elem = jobQueue.get()
@@ -98,7 +108,6 @@ def doJob():
                                 else:
                                     requests.post("http://localhost:8080/takeData/" + str(elem["id"]),params={"status": status})
                                 break #Evtl doch Continue?
-                                #Todo: Logik Implementieren
                             else:
                                 time.sleep(5)
                     if status == "error":
@@ -137,7 +146,7 @@ def serverBoot():
         port = 80
     else:
         port = 440
-    app.run(debug=True, host="0.0.0.0", port=port)#Todo: Debug  Ausschalten, Beißt sich  mit Threading
+    app.run(debug=True, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     init()
