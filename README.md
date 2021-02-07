@@ -48,7 +48,6 @@ Der Microservice soll über Endpoints aufrufbar sein, leider sind noch keine ver
 #### Verwendete Software
 Software | Version
 ------ | ------
-# Requirements
 Flask | 1.1.2
 requests | 2.25.0
 flask_cors | 3.0.9
