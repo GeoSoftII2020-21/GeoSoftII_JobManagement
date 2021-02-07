@@ -30,6 +30,9 @@ jobQueue = queue.Queue()
 
 @app.route("/dataStatus",methods=["GET"])
 def dataStatus():
+    """
+    Takes the data store status
+    """
     global dataserver_ready
     dataserver_ready = True
 
@@ -37,7 +40,7 @@ def dataStatus():
 @app.route("/takeJob", methods=["POST"])
 def takeJob():
     """
-    Nimmt job vom Frontend entgegen und queued ihn für die weitere bearbeitung. Antwortet mit status code 200.
+    Takes a job and queues it.
     :return:
     """
     js = request.get_json()
@@ -49,8 +52,7 @@ def takeJob():
 
 def doJob():
     """
-    Führt den Job in einem Extra Thread aus. Dazu wird erst der Status überprüft und danach wird jeder job teil an die dafür spezialisierten server weiter geleitet.
-    Das ergebnis wird am ende zurück ans Frontend gepostet.
+    Processes the job in a extrea thread.
     """
     global dataserver_ready
     while True:
@@ -127,7 +129,7 @@ def doJob():
 
 def init():
     """
-    Initialisiert etwas logik in dem es den Thread startet und notwendige umgebungs variablen ausliest
+    Initialize the extra Thread
     """
     t = threading.Thread(target=doJob)
     t.start()
@@ -137,7 +139,7 @@ def init():
 
 def serverBoot():
     """
-    Startet den Server. Aktuell im Debug Modus und Reagiert auf alle eingehenden Anfragen auf Port 80.
+    Starts the Server.
     """
     global docker
     if os.environ.get("DOCKER") == "True":
