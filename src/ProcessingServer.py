@@ -35,6 +35,7 @@ def dataStatus():
     """
     global dataserver_ready
     dataserver_ready = True
+    return Response(status=200)
 
 
 @app.route("/takeJob", methods=["POST"])
@@ -63,9 +64,9 @@ def doJob():
             elem = jobQueue.get()
             status = "running"
             if docker:
-                req = requests.get("http://frontend:8080/jobRunning/" + elem["id"])
+                req = requests.get("http://frontend:80/jobRunning/" + elem["id"])
             else:
-                req = requests.get("http://localhost:8080/jobRunning/" + elem["id"])
+                req = requests.get("http://localhost:80/jobRunning/" + elem["id"])
             req = req.json()
             if req["status"] == "running":
                 os.mkdir("data/"+ elem["id"])
@@ -105,17 +106,17 @@ def doJob():
                                 status = "error"
                                 doing = False
                                 if docker:
-                                    requests.post("http://frontend:8080/takeData/" + str(elem["id"]),
+                                    requests.post("http://frontend:80/takeData/" + str(elem["id"]),
                                                   params={"status": status,  "errorType": x["errorType"]})
                                 else:
-                                    requests.post("http://localhost:8080/takeData/" + str(elem["id"]),params={"status": status})
+                                    requests.post("http://localhost:80/takeData/" + str(elem["id"]),params={"status": status})
                                 break #Evtl doch Continue?
                             else:
                                 time.sleep(5)
                     if status == "error":
                         break
                 if status != "error":
-                    requests.post("http://frontend:8080/takeData/" + str(elem["id"]),  params={"status": "done"})
+                    requests.post("http://frontend:80/takeData/" + str(elem["id"]),  params={"status": "finished"})
         else:
             print("skip Iteration")
             time.sleep(5)
