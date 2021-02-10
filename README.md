@@ -6,7 +6,7 @@
 [2. Installation](#install) \
 [3. Scope of functionalities](#functionalities)  \
 [4. Examples of use](#use) \
-[5. Appendix](#annex) \
+[5. Appendix](#annex)
 
 \
 <a name="overview"><h3>Overview</h3></a>
