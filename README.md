@@ -28,7 +28,6 @@ docker-compose up
 <a name="functionalities"><h3>Scope of functionalities</h3></a>
 
 #### API endpoints
-Der Microservice soll über Endpoints aufrufbar sein, leider sind noch keine verfügbar.
 - `GET /dataStatus` Receives a request confirming that the DataServer is ready.
 - `POST /takeJob` Receives a request with a job and queues it.
 
